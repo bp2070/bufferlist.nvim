@@ -16,8 +16,7 @@ A simple Neovim plugin that shows your open buffers in a list on the right side 
 In your `init.lua` (Neovim 0.10+):
 
 ```lua
--- Replace `YOUR_GITHUB_USERNAME` with your GitHub username
-vim.pack.add('YOUR_GITHUB_USERNAME/bufferlist.nvim')
+vim.pack.add('https://github.com/bp2070/bufferlist.nvim')
 
 require('bufferlist').setup({
   -- optional configuration
