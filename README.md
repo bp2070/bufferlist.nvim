@@ -5,6 +5,7 @@ A simple Neovim plugin that shows your open buffers in a floating list.
 ## Features
 
 - Top-right floating window listing buffers
+- Preserves its current open/closed state when restoring a session
 - Shows current buffer (`>`), modified flag (`+`), list position, and filename
 - Shows `[no buffers]` when no named or modified buffers remain
 - Automatically updates on buffer add/delete/enter/write/modified
@@ -24,6 +25,7 @@ require('bufferlist').setup({
   width = 30,
   height = 20, -- maximum height; shrinks to fit the buffer list
   row = 1,
+  open_on_startup = true,
 })
 ```
 
@@ -51,8 +53,9 @@ vim.keymap.set('n', '<leader>b2', '<cmd>BufferListSelect 2<CR>', { silent = true
 ```lua
 require('bufferlist').setup({
   width = 30,   -- width of the floating window
-  height = 20,  -- maximum height; window shrinks to fit the list
-  row = 1,      -- number of rows from the top
+  height = 20,           -- maximum height; window shrinks to fit the list
+  row = 1,                -- number of rows from the top
+  open_on_startup = false, -- open automatically when Neovim starts
 })
 ```
 

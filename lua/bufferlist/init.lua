@@ -4,6 +4,7 @@ local config = {
   width = 30,
   height = 20,
   row = 1,
+  open_on_startup = false,
 }
 
 local state = {
@@ -11,6 +12,7 @@ local state = {
   buf = nil,
   open = false,
   last_win = nil,
+  session_was_open = false,
 }
 
 local function is_valid_win(win)
@@ -191,6 +193,47 @@ local function setup_autocmds()
         state.buf = nil
       end
     end,
+  })
+
+  if config.open_on_startup then
+    vim.api.nvim_create_autocmd('VimEnter', {
+      group = group,
+      once = true,
+      callback = M.open,
+    })
+  end
+
+  local function remember_session_state()
+    state.session_was_open = state.session_was_open or (state.open and is_valid_win(state.win))
+  end
+
+  local function restore_session_state()
+    if state.session_was_open then
+      state.session_was_open = false
+      vim.schedule(M.open)
+    end
+  end
+
+  vim.api.nvim_create_autocmd('SessionLoadPre', {
+    group = group,
+    callback = remember_session_state,
+  })
+
+  vim.api.nvim_create_autocmd('SessionLoadPost', {
+    group = group,
+    callback = restore_session_state,
+  })
+
+  vim.api.nvim_create_autocmd('User', {
+    group = group,
+    pattern = 'PersistenceLoadPre',
+    callback = remember_session_state,
+  })
+
+  vim.api.nvim_create_autocmd('User', {
+    group = group,
+    pattern = 'PersistenceLoadPost',
+    callback = restore_session_state,
   })
 end
 
