@@ -3,6 +3,7 @@ local M = {}
 local config = {
   width = 30,
   height = 20,
+  row = 1,
 }
 
 local state = {
@@ -27,6 +28,7 @@ local function get_buffers()
     if vim.api.nvim_buf_is_valid(bufnr)
       and vim.bo[bufnr].buflisted
       and bufnr ~= state.buf
+      and (vim.api.nvim_buf_get_name(bufnr) ~= '' or vim.bo[bufnr].modified)
     then
       table.insert(bufs, bufnr)
     end
@@ -44,8 +46,12 @@ local function render()
   local lines = {}
 
   local current = vim.api.nvim_get_current_buf()
+  if current == state.buf and is_valid_win(state.last_win) then
+    current = vim.api.nvim_win_get_buf(state.last_win)
+  end
+  local current_line = 1
 
-  for _, bufnr in ipairs(bufs) do
+  for index, bufnr in ipairs(bufs) do
     local name = vim.api.nvim_buf_get_name(bufnr)
     if name == '' then
       name = '[No Name]'
@@ -54,7 +60,10 @@ local function render()
     end
     local modified = vim.bo[bufnr].modified and '+' or ' '
     local curflag = (bufnr == current) and '>' or ' '
-    table.insert(lines, string.format('%s%s %3d %s', curflag, modified, bufnr, name))
+    if bufnr == current then
+      current_line = index
+    end
+    table.insert(lines, string.format('%s%s%d %s', curflag, modified, index, name))
   end
 
   if #lines == 0 then
@@ -64,6 +73,22 @@ local function render()
   vim.bo[state.buf].modifiable = true
   vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, lines)
   vim.bo[state.buf].modifiable = false
+  local available_height = vim.o.lines - config.row - 2
+  local height = math.max(1, math.min(#lines, config.height, available_height))
+  vim.api.nvim_win_set_height(state.win, height)
+  vim.api.nvim_win_set_cursor(state.win, { current_line, 0 })
+end
+
+local function select_buffer(index)
+  local bufnr = get_buffers()[index]
+  if not bufnr or not vim.api.nvim_buf_is_valid(bufnr) then
+    return
+  end
+
+  if is_valid_win(state.win) and vim.api.nvim_get_current_win() == state.win and is_valid_win(state.last_win) then
+    vim.api.nvim_set_current_win(state.last_win)
+  end
+  vim.api.nvim_set_current_buf(bufnr)
 end
 
 local function open_window()
@@ -75,14 +100,15 @@ local function open_window()
 
   local buf = vim.api.nvim_create_buf(false, true)
   local width = math.max(1, math.min(config.width, vim.o.columns - 2))
-  local height = math.max(1, math.min(config.height, vim.o.lines - 2))
+  local available_height = vim.o.lines - config.row - 2
+  local height = math.max(1, math.min(math.max(1, #get_buffers()), config.height, available_height))
   local win = vim.api.nvim_open_win(buf, false, {
     relative = 'editor',
     anchor = 'NW',
     width = width,
     height = height,
-    row = math.max(0, math.floor((vim.o.lines - height) / 2)),
-    col = math.max(0, math.floor((vim.o.columns - width) / 2)),
+    row = config.row,
+    col = math.max(0, vim.o.columns - width - 2),
     style = 'minimal',
     border = 'rounded',
   })
@@ -99,18 +125,7 @@ local function open_window()
 
   -- keymaps inside the buffer list
   vim.keymap.set('n', '<CR>', function()
-    local line = vim.api.nvim_get_current_line()
-    local bufnr = tonumber(line:match('%s(%d+)%s')) or tonumber(line:match('(%d+)'))
-    if not bufnr or not vim.api.nvim_buf_is_valid(bufnr) then
-      return
-    end
-    -- go back to last window if it is valid
-    if is_valid_win(state.last_win) then
-      vim.api.nvim_set_current_win(state.last_win)
-    else
-      vim.cmd('wincmd p')
-    end
-    vim.api.nvim_set_current_buf(bufnr)
+    select_buffer(vim.api.nvim_win_get_cursor(0)[1])
   end, { buffer = buf, nowait = true, silent = true })
 
   vim.keymap.set('n', 'q', function()
@@ -133,6 +148,10 @@ function M.open()
   open_window()
 end
 
+function M.select(index)
+  select_buffer(index)
+end
+
 function M.close()
   if state.open and is_valid_win(state.win) then
     vim.api.nvim_win_close(state.win, true)
@@ -153,11 +172,11 @@ end
 local function setup_autocmds()
   local group = vim.api.nvim_create_augroup('BufferList', { clear = true })
 
-  vim.api.nvim_create_autocmd({ 'BufAdd', 'BufDelete', 'BufEnter', 'BufWritePost', 'BufModifiedSet' }, {
+  vim.api.nvim_create_autocmd({ 'BufAdd', 'BufDelete', 'BufWipeout', 'BufEnter', 'BufWritePost', 'BufModifiedSet' }, {
     group = group,
     callback = function()
       if state.open then
-        render()
+        vim.schedule(render)
       end
     end,
   })
@@ -193,6 +212,10 @@ function M.setup(opts)
   vim.api.nvim_create_user_command('BufferListClose', function()
     M.close()
   end, {})
+
+  vim.api.nvim_create_user_command('BufferListSelect', function(args)
+    M.select(tonumber(args.args))
+  end, { nargs = 1 })
 end
 
 return M
