@@ -2,7 +2,7 @@ local M = {}
 
 local config = {
   width = 30,
-  side = 'right', -- currently only 'right' is used
+  height = 20,
 }
 
 local state = {
@@ -73,15 +73,19 @@ local function open_window()
 
   state.last_win = vim.api.nvim_get_current_win()
 
-  -- create a vertical split on the right
-  vim.cmd('vsplit')
-  vim.cmd('wincmd L')
-  vim.cmd('vertical resize ' .. config.width)
-
-  local win = vim.api.nvim_get_current_win()
   local buf = vim.api.nvim_create_buf(false, true)
-
-  vim.api.nvim_win_set_buf(win, buf)
+  local width = math.max(1, math.min(config.width, vim.o.columns - 2))
+  local height = math.max(1, math.min(config.height, vim.o.lines - 2))
+  local win = vim.api.nvim_open_win(buf, false, {
+    relative = 'editor',
+    anchor = 'NW',
+    width = width,
+    height = height,
+    row = math.max(0, math.floor((vim.o.lines - height) / 2)),
+    col = math.max(0, math.floor((vim.o.columns - width) / 2)),
+    style = 'minimal',
+    border = 'rounded',
+  })
 
   vim.bo[buf].buftype = 'nofile'
   vim.bo[buf].bufhidden = 'wipe'

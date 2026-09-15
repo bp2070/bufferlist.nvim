@@ -1,10 +1,10 @@
 # bufferlist.nvim
 
-A simple Neovim plugin that shows your open buffers in a list on the right side of the screen.
+A simple Neovim plugin that shows your open buffers in a floating list.
 
 ## Features
 
-- Right-side vertical window listing buffers
+- Centered floating window listing buffers
 - Shows current buffer (`>`), modified flag (`+`), buffer number, and filename
 - Automatically updates on buffer add/delete/enter/write/modified
 - Press `<CR>` on a buffer to jump to it
@@ -21,6 +21,7 @@ vim.pack.add('https://github.com/bp2070/bufferlist.nvim')
 require('bufferlist').setup({
   -- optional configuration
   width = 30,
+  height = 20,
 })
 ```
 
@@ -28,9 +29,9 @@ require('bufferlist').setup({
 
 Commands:
 
-- `:BufferListToggle` – toggle the buffer list window
-- `:BufferListOpen` – open the buffer list window
-- `:BufferListClose` – close the buffer list window
+- `:BufferListToggle` – toggle the floating buffer list
+- `:BufferListOpen` – open the floating buffer list
+- `:BufferListClose` – close the floating buffer list
 
 Example keymap:
 
@@ -44,8 +45,8 @@ vim.keymap.set('n', '<leader>bl', '<cmd>BufferListToggle<CR>', { silent = true }
 
 ```lua
 require('bufferlist').setup({
-  width = 30,      -- width of the buffer list window
-  side = 'right',  -- reserved for future use; currently always opens on the right
+  width = 30,   -- width of the floating window
+  height = 20,  -- height of the floating window
 })
 ```
 
