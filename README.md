@@ -59,6 +59,24 @@ require('bufferlist').setup({
 })
 ```
 
+## Testing
+
+Tests use [`mini.test`](https://github.com/nvim-mini/mini.nvim/blob/main/readmes/mini-test.md).
+Install its test-only dependency once from the repository root:
+
+```sh
+mkdir -p deps
+git clone --filter=blob:none https://github.com/nvim-mini/mini.nvim deps/mini.nvim
+```
+
+Run the headless suite with:
+
+```sh
+nvim --headless --noplugin -u ./scripts/minimal_init.lua -c "lua MiniTest.run()"
+```
+
+A `Makefile` also provides `make test` where `make` is available.
+
 ## License
 
 MIT
